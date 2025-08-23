@@ -52,9 +52,9 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   fovSlider = new nanogui::Slider(window);
   fovSlider->set_fixed_width(250);
   fovSlider->set_callback([&](float value) {
-    serialise(sender, "fov", value * 180.f);
+    serialise(sender, "fov",value * 180.f);
   });
-  fovSlider->set_value(60.f / 360.f);
+  fovSlider->set_value(60.f / 180.f);
   fovSlider->callback()(fovSlider->value());
   add_widget("Field of View", fovSlider);
 
@@ -63,18 +63,18 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
     float fovRadians = 0.f;
     deserialise(packet, fovRadians);
     BOOST_LOG_TRIVIAL(trace) << "Received FOV update: " << fovRadians;
-    fovSlider->set_value(fovRadians / (2.f * M_PI));
+    fovSlider->set_value(fovRadians / (M_PI));
   });
 
   // Render controls:
-  add_group("Variable Parameters");
+  // add_group("Variable Parameters");
 
   auto* XSlider = new nanogui::Slider(window);
   XSlider->set_fixed_width(250);
   XSlider->set_callback([&](float value) {
     serialise(sender, "X", value);
   });
-  XSlider->set_value(0.5f);
+  XSlider->set_value(0.35f);
   XSlider->callback()(XSlider->value());
   add_widget("X", XSlider);
 
@@ -92,7 +92,7 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   ZSlider->set_callback([&](float value) {
     serialise(sender, "Z", value);
   });
-  ZSlider->set_value(360.f / 720.f);
+  ZSlider->set_value(0.5f);
   ZSlider->callback()(ZSlider->value());
   add_widget("Z", ZSlider);
   
@@ -137,7 +137,7 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   add_widget("Frame rate:", frameRateText);
 
   // Status/stop button:
-  add_group("Render Status");
+  add_group("Render Mode");
 
   modeChooser = new nanogui::ComboBox(window, {"rgb", "depth"});
   modeChooser->set_enabled(true);
