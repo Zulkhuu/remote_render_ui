@@ -4,7 +4,6 @@ project(remote-ui)
 
 find_package(OpenGL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options log)
-find_package( k4a REQUIRED )
 
 find_package(OpenCV REQUIRED)
 
@@ -39,7 +38,6 @@ target_link_libraries(
   ${NANOGUI_EXTRA_LIBS} ${OPENGL_LIBRARIES}
   ${PACKETCOMMS_LIBRARIES} ${VIDEOLIB_LIBRARIES}
   ${OpenCV_LIBS}
-  k4a::k4a
 )
 
 target_compile_definitions(remote-ui PRIVATE -DBOOST_LOG_DYN_LINK)

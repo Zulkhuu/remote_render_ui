@@ -1,7 +1,6 @@
 // Copyright (c) 2022 Graphcore Ltd. All rights reserved.
 
 #include "RenderClientApp.hpp"
-#include "VideoCapture.hpp"
 
 #include <GLFW/glfw3.h>
 #include <PacketSerialisation.h>
@@ -19,7 +18,6 @@ RenderClientApp::RenderClientApp(const nanogui::Vector2i& size, PacketMuxer& tx,
   syncWithServer(tx, rx, "ready");
 
   // TODO: make this not so weird (for the camera thread)
-  // cameraThread.reset(new std::thread([&]() {new VideoCapture(tx);}));
   preview = new VideoPreviewWindow(this, "Render Preview", rx);
 
   // Have to manually set positions due to bug in ComboBox:

@@ -7,7 +7,6 @@
 
 #include "ControlsForm.hpp"
 #include "VideoPreviewWindow.hpp"
-#include "VideoCapture.hpp"
 
 /// A screen containing all the application's other windows.
 class RenderClientApp : public nanogui::Screen {

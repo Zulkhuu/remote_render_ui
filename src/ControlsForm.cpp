@@ -52,9 +52,9 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   fovSlider = new nanogui::Slider(window);
   fovSlider->set_fixed_width(250);
   fovSlider->set_callback([&](float value) {
-    serialise(sender, "fov", value * 360.f);
+    serialise(sender, "fov", value * 180.f);
   });
-  fovSlider->set_value(90.f / 360.f);
+  fovSlider->set_value(60.f / 360.f);
   fovSlider->callback()(fovSlider->value());
   add_widget("Field of View", fovSlider);
 
@@ -68,71 +68,51 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
 
   // Render controls:
   add_group("Variable Parameters");
-  auto* exposureSlider = new nanogui::Slider(window);
-  exposureSlider->set_fixed_width(250);
-  exposureSlider->set_callback([&](float value) {
-    value = 4.f * (value - 0.5f);
-    serialise(sender, "exposure", value);
-  });
-  exposureSlider->set_value(.5f);
-  exposureSlider->callback()(exposureSlider->value());
-  add_widget("Exposure", exposureSlider);
-
-  auto* gammaSlider = new nanogui::Slider(window);
-  gammaSlider->set_fixed_width(250);
-  gammaSlider->set_callback([&](float value) {
-    value = 4.f * value;
-    serialise(sender, "gamma", value);
-  });
-  gammaSlider->set_value(2.2f / 4.f);
-  gammaSlider->callback()(gammaSlider->value());
-  add_widget("Gamma", gammaSlider);
-
 
   auto* XSlider = new nanogui::Slider(window);
   XSlider->set_fixed_width(250);
   XSlider->set_callback([&](float value) {
-    serialise(sender, "X", value * 1280.f);
+    serialise(sender, "X", value);
   });
-  XSlider->set_value(640.f / 1280.f);
+  XSlider->set_value(0.5f);
   XSlider->callback()(XSlider->value());
   add_widget("X", XSlider);
 
   auto* YSlider = new nanogui::Slider(window);
   YSlider->set_fixed_width(250);
   YSlider->set_callback([&](float value) {
-    serialise(sender, "Y", value * 720.f);
+    serialise(sender, "Y", value);
   });
-  YSlider->set_value(360.f / 720.f);
+  YSlider->set_value(0.5f);
   YSlider->callback()(YSlider->value());
   add_widget("Y", YSlider);
 
   auto* ZSlider = new nanogui::Slider(window);
   ZSlider->set_fixed_width(250);
   ZSlider->set_callback([&](float value) {
-    serialise(sender, "Z", value * 720.f);
+    serialise(sender, "Z", value);
   });
   ZSlider->set_value(360.f / 720.f);
   ZSlider->callback()(ZSlider->value());
   add_widget("Z", ZSlider);
 
-  auto* lambda1Slider = new nanogui::Slider(window);
-  lambda1Slider->set_fixed_width(250);
-  lambda1Slider->set_callback([&](float value) {
-    serialise(sender, "lambda1", value * 100.f);
-  });
-  lambda1Slider->set_value(500.f / 10.f);
-  lambda1Slider->callback()(lambda1Slider->value());
-  add_widget("Lambda1", lambda1Slider);
+  // auto* lambda1Slider = new nanogui::Slider(window);
+  // lambda1Slider->set_fixed_width(250);
+  // lambda1Slider->set_callback([&](float value) {
+  //   serialise(sender, "lambda1", value * 100.f);
+  // });
+  // lambda1Slider->set_value(500.f / 10.f);
+  // lambda1Slider->callback()(lambda1Slider->value());
+  // add_widget("Lambda1", lambda1Slider);
 
-  auto* lambda2Slider = new nanogui::Slider(window);
-  lambda2Slider->set_fixed_width(250);
-  lambda2Slider->set_callback([&](float value) {
-    serialise(sender, "lambda2", value * 100.f);
-  });
-  lambda2Slider->set_value(500.f / 10.f);
-  lambda2Slider->callback()(lambda2Slider->value());
-  add_widget("Lambda2", lambda2Slider);
+  // auto* lambda2Slider = new nanogui::Slider(window);
+  // lambda2Slider->set_fixed_width(250);
+  // lambda2Slider->set_callback([&](float value) {
+  //   serialise(sender, "lambda2", value * 100.f);
+  // });
+  // lambda2Slider->set_value(500.f / 10.f);
+  // lambda2Slider->callback()(lambda2Slider->value());
+  // add_widget("Lambda2", lambda2Slider);
   
   // Info/stats
   add_group("Info/Stats");
@@ -177,17 +157,17 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   // Status/stop button:
   add_group("Render Status");
 
-  deviceChooser = new nanogui::ComboBox(window, {"cpu", "ipu"});
-  deviceChooser->set_enabled(true);
-  deviceChooser->set_side(nanogui::Popup::Side::Left);
-  deviceChooser->set_tooltip("Pass a JSON file using '--nif-paths' option to enable selection.");
-  deviceChooser->set_callback([&](int index) {
-    auto deviceString = deviceChooser->items()[index];
-    BOOST_LOG_TRIVIAL(debug) << "Sending new device: " << deviceString;
-    serialise(sender, "device", deviceString);
+  modeChooser = new nanogui::ComboBox(window, {"rgb", "depth"});
+  modeChooser->set_enabled(true);
+  modeChooser->set_side(nanogui::Popup::Side::Left);
+  modeChooser->set_tooltip("Pass a JSON file using '--nif-paths' option to enable selection.");
+  modeChooser->set_callback([&](int index) {
+    auto deviceString = modeChooser->items()[index];
+    BOOST_LOG_TRIVIAL(debug) << "Sending new mode: " << deviceString;
+    serialise(sender, "mode", deviceString);
   });
-  deviceChooser->set_font_size(16);
-  add_widget("Choose render device: ", deviceChooser);
+  modeChooser->set_font_size(16);
+  add_widget("Choose render mode: ", modeChooser);
 
   add_button("Stop", [screen, &sender]() {
     serialise(sender, "stop", true);
