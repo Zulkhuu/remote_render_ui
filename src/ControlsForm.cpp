@@ -95,24 +95,6 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   ZSlider->set_value(360.f / 720.f);
   ZSlider->callback()(ZSlider->value());
   add_widget("Z", ZSlider);
-
-  // auto* lambda1Slider = new nanogui::Slider(window);
-  // lambda1Slider->set_fixed_width(250);
-  // lambda1Slider->set_callback([&](float value) {
-  //   serialise(sender, "lambda1", value * 100.f);
-  // });
-  // lambda1Slider->set_value(500.f / 10.f);
-  // lambda1Slider->callback()(lambda1Slider->value());
-  // add_widget("Lambda1", lambda1Slider);
-
-  // auto* lambda2Slider = new nanogui::Slider(window);
-  // lambda2Slider->set_fixed_width(250);
-  // lambda2Slider->set_callback([&](float value) {
-  //   serialise(sender, "lambda2", value * 100.f);
-  // });
-  // lambda2Slider->set_value(500.f / 10.f);
-  // lambda2Slider->callback()(lambda2Slider->value());
-  // add_widget("Lambda2", lambda2Slider);
   
   // Info/stats
   add_group("Info/Stats");
@@ -159,12 +141,12 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
 
   modeChooser = new nanogui::ComboBox(window, {"rgb", "depth"});
   modeChooser->set_enabled(true);
-  modeChooser->set_side(nanogui::Popup::Side::Left);
-  modeChooser->set_tooltip("Pass a JSON file using '--nif-paths' option to enable selection.");
+  modeChooser->set_side(nanogui::Popup::Side::Right);
+  modeChooser->set_tooltip("Select rendering mode: {rgb, depth}");
   modeChooser->set_callback([&](int index) {
-    auto deviceString = modeChooser->items()[index];
-    BOOST_LOG_TRIVIAL(debug) << "Sending new mode: " << deviceString;
-    serialise(sender, "mode", deviceString);
+    auto modeString = modeChooser->items()[index];
+    BOOST_LOG_TRIVIAL(debug) << "Sending new mode: " << modeString;
+    serialise(sender, "mode", modeString);
   });
   modeChooser->set_font_size(16);
   add_widget("Choose render mode: ", modeChooser);
