@@ -99,29 +99,99 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   // Info/stats
   add_group("Info/Stats");
 
+  auto l4_hist = new nanogui::Graph(window);
+  l4_hist->set_caption(" ");
+  add_widget("L4 routers Workload", l4_hist);
+  auto l3_hist = new nanogui::Graph(window);
+  l3_hist->set_caption(" ");
+  add_widget("L3 routers Workload", l3_hist);
+  auto l2_hist = new nanogui::Graph(window);
+  l2_hist->set_caption(" ");
+  add_widget("L2 routers Workload", l2_hist);
+  auto l1_hist = new nanogui::Graph(window);
+  l1_hist->set_caption(" ");
+  add_widget("L1 routers Workload", l1_hist);
+  auto l0_hist = new nanogui::Graph(window);
+  l0_hist->set_caption(" ");
+  add_widget("L0 routers Workload", l0_hist);
   auto hist = new nanogui::Graph(window);
-  hist->set_caption("Splats per tile");
-  add_widget("Workload Balance", hist);
+  hist->set_caption(" ");
+  add_widget("Ray Tracers Workload", hist);
 
-  subs["tile_histogram"] = receiver.subscribe("tile_histogram", [hist](const ComPacket::ConstSharedPacket& packet) {
+  subs["tile_histogram"] = receiver.subscribe("tile_histogram", [hist, l0_hist, l1_hist, l2_hist, l3_hist, l4_hist](const ComPacket::ConstSharedPacket& packet) {
     std::vector<std::uint32_t> data;
     deserialise(packet, data);
     std::vector<float> dataf;
     dataf.reserve(data.size());
-
-    std::uint32_t max = 0.f;
-    for (const auto& v : data) {
-      if (v > max) { max = v; }
-    }
-
-    const float scale = 1.f / max;
+    const unsigned max_rays = data.back();
+    const float scale = 1.f / max_rays;
     for (const auto& v : data) {
       dataf.push_back(v * scale);
     }
+    auto slice = [&](std::size_t off, std::size_t count) -> std::vector<float> {
+      const std::size_t n = dataf.size();
+      const std::size_t take = (off < n) ? std::min(count, n - off) : 0;
+      return std::vector<float>(dataf.begin() + off, dataf.begin() + off + take);
+    };
+
+    constexpr std::size_t kNumRayTracerTiles  = 1024;
+    constexpr std::size_t kChildrenPerRouter = 4;
+    constexpr std::size_t kNumL0RouterTiles = kNumRayTracerTiles / kChildrenPerRouter; // 256
+    constexpr std::size_t kNumL1RouterTiles = kNumL0RouterTiles / kChildrenPerRouter; // 64
+    constexpr std::size_t kNumL2RouterTiles = kNumL1RouterTiles / kChildrenPerRouter; // 16;
+    constexpr std::size_t kNumL3RouterTiles = kNumL2RouterTiles / kChildrenPerRouter; // 4
+    constexpr std::size_t kNumL4RouterTiles = kNumL3RouterTiles / kChildrenPerRouter; 
+
+    constexpr std::size_t l0_base = kNumRayTracerTiles;
+    constexpr std::size_t l1_base = l0_base + kNumL0RouterTiles;
+    constexpr std::size_t l2_base = l1_base + kNumL1RouterTiles;
+    constexpr std::size_t l3_base = l2_base + kNumL2RouterTiles;
+    constexpr std::size_t l4_base = l3_base + kNumL3RouterTiles;
+
+    std::vector<float> rtSlice = slice(0, kNumRayTracerTiles);
+    rtSlice.resize(kNumRayTracerTiles, 0.f);
+
+    std::vector<float> l0Src = slice(l0_base, kNumL0RouterTiles);  // 256
+    std::vector<float> l1Src = slice(l1_base, kNumL1RouterTiles);  // 64
+    std::vector<float> l2Src = slice(l2_base, kNumL2RouterTiles);  // 16
+    std::vector<float> l3Src = slice(l3_base, kNumL3RouterTiles);  // 4
+    std::vector<float> l4Src = slice(l4_base, 1);  // 1
+
+    std::vector<float> l0Expanded(kNumRayTracerTiles, 0.f);
+    for (std::size_t i = 0; i < l0Src.size(); ++i) {
+      const std::size_t idx = 2 + i * 4;      // 2, 6, 10, ... 1022
+      if (idx < l0Expanded.size()) l0Expanded[idx] = l0Src[i];
+    }
+
+    std::vector<float> l1Expanded(kNumRayTracerTiles, 0.f); 
+    for (std::size_t i = 0; i < l1Src.size(); ++i) {
+      const std::size_t idx = 8 + i * 16;    // 10, 26, 42, ... 1018
+      if (idx < l1Expanded.size()) l1Expanded[idx] = l1Src[i];
+    }
+
+    std::vector<float> l2Expanded(kNumRayTracerTiles, 0.f);  
+    for (std::size_t i = 0; i < l2Src.size(); ++i) {
+      const std::size_t idx = 32 + i * 64;    // 10, 26, 42, ... 1018
+      if (idx < l2Expanded.size()) l2Expanded[idx] = l2Src[i];
+    }
+
+    std::vector<float> l3Expanded(kNumRayTracerTiles, 0.f);  
+    for (std::size_t i = 0; i < l1Src.size(); ++i) {
+      const std::size_t idx = 128 + i * 256;    // 10, 26, 42, ... 1018
+      if (idx < l3Expanded.size()) l3Expanded[idx] = l3Src[i];
+    }
+    std::vector<float> l4Expanded(kNumRayTracerTiles, 0.f);  
+    l4Expanded[512] = l4Src[0];
+
     std::stringstream ss;
-    ss << "max tile: " << max;
-    hist->set_header(ss.str());
-    hist->set_values(dataf);
+    ss << "Capacity: " << max_rays;
+    l4_hist->set_header(ss.str());
+    hist->set_values(rtSlice);
+    l0_hist->set_values(l0Expanded);
+    l1_hist->set_values(l1Expanded);
+    l2_hist->set_values(l2Expanded);
+    l3_hist->set_values(l3Expanded);
+    l4_hist->set_values(l4Expanded);
   });
 
   bitRateText = new nanogui::TextBox(window, "-");
