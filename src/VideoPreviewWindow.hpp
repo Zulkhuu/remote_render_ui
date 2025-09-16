@@ -46,6 +46,7 @@ private:
   std::vector<float> rawBuffer;
   nanogui::Texture* texture;
   nanogui::ImageView* imageView;
+  double upscale;
   double mbps;
   std::chrono::steady_clock::time_point m_lastFrameTime;
   double fps;

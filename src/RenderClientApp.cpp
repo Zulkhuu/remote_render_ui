@@ -60,7 +60,7 @@ void RenderClientApp::draw(NVGcontext* ctx) {
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2)
        << preview->getVideoBandwidthMbps();
-    form->bitRateText->set_value(ss.str());
+    // form->bitRateText->set_value(ss.str());
     // Update frame rate text:
     ss.str(std::string());
     ss << std::fixed << std::setprecision(2)

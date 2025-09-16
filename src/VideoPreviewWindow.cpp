@@ -5,6 +5,8 @@
 #include <PacketComms.h>
 
 #include <boost/log/trivial.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/core.hpp>
 
 VideoPreviewWindow::VideoPreviewWindow(
     nanogui::Screen* screen,
@@ -16,6 +18,7 @@ VideoPreviewWindow::VideoPreviewWindow(
       mbps(0.0),
       m_lastFrameTime(std::chrono::steady_clock::now()),
       fps(0.f),
+      upscale(1.2f),
       newFrameDecoded(false),
       runDecoderThread(true),
       showRawPixelValues(false) {
@@ -27,6 +30,8 @@ VideoPreviewWindow::VideoPreviewWindow(
     // Allocate a buffer to store the decoded and converted images:
     auto w = videoClient->getFrameWidth();
     auto h = videoClient->getFrameHeight();
+    int wu = int(w*upscale);
+    int hu = int(h*upscale);
 
     // Create the texture first because internally nanogui will create
     // one with the preferred format and we need to know how to allcoate
@@ -34,7 +39,7 @@ VideoPreviewWindow::VideoPreviewWindow(
     texture = new Texture(
         Texture::PixelFormat::RGB,
         Texture::ComponentFormat::UInt8,
-        Vector2i(w, h),
+        Vector2i(wu, hu),
         Texture::InterpolationMode::Trilinear,
         Texture::InterpolationMode::Nearest);
     const auto ch = texture->channels();
@@ -45,8 +50,8 @@ VideoPreviewWindow::VideoPreviewWindow(
       throw std::logic_error("Texture returned has an unsupported number of texture channels.");
     }
 
-    bgrBuffer.resize(w * h * ch);
-    this->set_size(Vector2i(w, h));
+    bgrBuffer.resize(wu * hu * ch);
+    this->set_size(Vector2i(wu, hu));
     this->set_layout(new GroupLayout(0));
     imageView = new ImageView(this);
 
@@ -61,7 +66,7 @@ VideoPreviewWindow::VideoPreviewWindow(
 
     texture->upload(bgrBuffer.data());
 
-    imageView->set_size(Vector2i(w, h));
+    imageView->set_size(Vector2i(wu, hu));
     imageView->set_image(texture);
     imageView->center();
     imageView->set_pixel_callback(
@@ -136,16 +141,34 @@ void VideoPreviewWindow::decodeVideoFrame() {
         if (texture != nullptr) {
           // Extract decoded data to the buffer:
           std::lock_guard<std::mutex> lock(bufferMutex);
-          if (texture->channels() == 3) {
-            stream.ExtractRgbImage(bgrBuffer.data(), w * texture->channels());
-          } else if (texture->channels() == 4) {
-            stream.ExtractRgbaImage(bgrBuffer.data(), w * texture->channels());
+          int ch = texture->channels();
+          std::vector<uint8_t> tmpBuffer(w * h * ch);
+          
+
+          if (ch == 3) {
+            stream.ExtractRgbImage(tmpBuffer.data(), w * ch);
+          } else if (ch == 4) {
+            stream.ExtractRgbaImage(tmpBuffer.data(), w * ch);
           } else {
             throw std::runtime_error("Unsupported number of texture channels");
           }
+
+          // --- Resize using OpenCV ---
+          cv::Mat inputImg(h, w, (ch == 3) ? CV_8UC3 : CV_8UC4, tmpBuffer.data());
+          cv::Mat upsampledImg;
+          cv::resize(inputImg, upsampledImg, cv::Size(), upscale, upscale, cv::INTER_LINEAR);
+          
+          // Resize bgrBuffer to fit upsampled image
+          bgrBuffer.resize(upsampledImg.total() * ch);
+          std::memcpy(bgrBuffer.data(), upsampledImg.data, bgrBuffer.size());
+          // After resizing
+          if (texture->size() != nanogui::Vector2i(upsampledImg.cols, upsampledImg.rows)) {
+            texture->resize(nanogui::Vector2i(upsampledImg.cols, upsampledImg.rows));
+            this->set_size(nanogui::Vector2i(upsampledImg.cols, upsampledImg.rows));
+            imageView->set_size(nanogui::Vector2i(upsampledImg.cols, upsampledImg.rows));
+          }
         }
       });
-
   if (newFrameDecoded) {
     double bps = videoClient->computeVideoBandwidthConsumed();
     auto imbps = bps / (1024.0 * 1024.0);
