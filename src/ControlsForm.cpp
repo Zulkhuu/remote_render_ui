@@ -97,26 +97,27 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
   add_widget("Z", ZSlider);
   
   // Info/stats
-  add_group("Info/Stats");
+  add_group("Workloads");
 
   auto l4_hist = new nanogui::Graph(window);
   l4_hist->set_caption(" ");
-  add_widget("L4 routers Workload", l4_hist);
+  add_widget("L4 routers", l4_hist);
   auto l3_hist = new nanogui::Graph(window);
   l3_hist->set_caption(" ");
-  add_widget("L3 routers Workload", l3_hist);
+  add_widget("L3 routers", l3_hist);
   auto l2_hist = new nanogui::Graph(window);
   l2_hist->set_caption(" ");
-  add_widget("L2 routers Workload", l2_hist);
+  add_widget("L2 routers", l2_hist);
   auto l1_hist = new nanogui::Graph(window);
   l1_hist->set_caption(" ");
-  add_widget("L1 routers Workload", l1_hist);
+  add_widget("L1 routers", l1_hist);
   auto l0_hist = new nanogui::Graph(window);
   l0_hist->set_caption(" ");
-  add_widget("L0 routers Workload", l0_hist);
+  add_widget("L0 routers", l0_hist);
   auto hist = new nanogui::Graph(window);
   hist->set_caption(" ");
-  add_widget("Ray Tracers Workload", hist);
+  add_widget("Ray Tracers", hist);
+  add_group("Info/Stats");
 
   subs["tile_histogram"] = receiver.subscribe("tile_histogram", [hist, l0_hist, l1_hist, l2_hist, l3_hist, l4_hist](const ComPacket::ConstSharedPacket& packet) {
     std::vector<std::uint32_t> data;
@@ -159,25 +160,25 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
 
     std::vector<float> l0Expanded(kNumRayTracerTiles, 0.f);
     for (std::size_t i = 0; i < l0Src.size(); ++i) {
-      const std::size_t idx = 2 + i * 4;      // 2, 6, 10, ... 1022
+      const std::size_t idx = 256 + i * 2;      // 2, 6, 10, ... 1022
       if (idx < l0Expanded.size()) l0Expanded[idx] = l0Src[i];
     }
 
     std::vector<float> l1Expanded(kNumRayTracerTiles, 0.f); 
     for (std::size_t i = 0; i < l1Src.size(); ++i) {
-      const std::size_t idx = 8 + i * 16;    // 10, 26, 42, ... 1018
+      const std::size_t idx = 256 + 128 + i * 4;    // 10, 26, 42, ... 1018
       if (idx < l1Expanded.size()) l1Expanded[idx] = l1Src[i];
     }
 
     std::vector<float> l2Expanded(kNumRayTracerTiles, 0.f);  
     for (std::size_t i = 0; i < l2Src.size(); ++i) {
-      const std::size_t idx = 32 + i * 64;    // 10, 26, 42, ... 1018
+      const std::size_t idx = 256 + 128 + 64 + i * 8;    // 10, 26, 42, ... 1018
       if (idx < l2Expanded.size()) l2Expanded[idx] = l2Src[i];
     }
 
     std::vector<float> l3Expanded(kNumRayTracerTiles, 0.f);  
-    for (std::size_t i = 0; i < l1Src.size(); ++i) {
-      const std::size_t idx = 128 + i * 256;    // 10, 26, 42, ... 1018
+    for (std::size_t i = 0; i < l3Src.size(); ++i) {
+      const std::size_t idx = 256 + 128 + 64 + 32 + i * 16;    // 10, 26, 42, ... 1018
       if (idx < l3Expanded.size()) l3Expanded[idx] = l3Src[i];
     }
     std::vector<float> l4Expanded(kNumRayTracerTiles, 0.f);  
@@ -194,17 +195,17 @@ ControlsForm::ControlsForm(nanogui::Screen* screen,
     l4_hist->set_values(l4Expanded);
   });
 
-  bitRateText = new nanogui::TextBox(window, "-");
-  bitRateText->set_editable(false);
-  bitRateText->set_units("Mbps");
-  bitRateText->set_alignment(nanogui::TextBox::Alignment::Right);
-  add_widget("Video rate:", bitRateText);
+  // bitRateText = new nanogui::TextBox(window, "-");
+  // bitRateText->set_editable(false);
+  // bitRateText->set_units("Mbps");
+  // bitRateText->set_alignment(nanogui::TextBox::Alignment::Right);
+  // add_widget("Video rate:", bitRateText);
 
   frameRateText = new nanogui::TextBox(window, "-");
   frameRateText->set_editable(false);
-  frameRateText->set_units("Frames/sec");
+  frameRateText->set_units("Updates/sec");
   frameRateText->set_alignment(nanogui::TextBox::Alignment::Right);
-  add_widget("Frame rate:", frameRateText);
+  add_widget("Refresh rate:", frameRateText);
 
   // Status/stop button:
   add_group("Render Mode");
